@@ -1,17 +1,29 @@
+/* Base JS for mapping POI and route shortest distance route. 
+ * 
+ * Hack the Planet project by Team Hotdog.
+ */
 
 var map;
+
 var start =  {lat: 41.71, lng: -87.8};
+
+var totalDistance = 0;
+
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
     center:  {lat: 41.85, lng: -87.65},
     zoom: 10
   });
 
-
   putMarkers();
 
-  path = findPath(start, 0.5);
-  alert(JSON.stringify(path));
+  path = findPath(start, 0.3);
+  totalDistance += dist(start, path[path.length-1]);
+  path.push(start);
+  console.log("final distance: " + totalDistance);
+
+  console.log(JSON.stringify(path));
+
   var flightPath = new google.maps.Polyline({
     path: path,
     geodesic: true,
@@ -19,18 +31,8 @@ function initMap() {
     strokeOpacity: 1.0,
     strokeWeight: 2
   });
-
   flightPath.setMap(map);
 }
-
-var points = [
-  {lat: 41.85, lng: -87.65},
-  {lat: 41.95, lng: -87.55},
-  {lat: 42.05, lng: -87.35},
-  {lat: 41.99, lng: -87.45},
-  {lat: 42.00, lng: -87.55},
-  {lat: 41.90, lng: -87.50}
-];
 
 function dist(p1, p2) {
   return Math.sqrt((p1.lat - p2.lat) * (p1.lat - p2.lat) +
@@ -49,22 +51,28 @@ function putMarkers() {
 
     marker.setMap(map);
   }
+  var startPt = new google.maps.Marker({
+    position: start,
+    map: map,
+    title: "Starting Point"
+  });
+  marker.setMap(map);
 }
 
 
-function findPath(start, maxDist, path) {
+function findPath(head, maxDist, path) {
   //alert('findPath' + JSON.stringify(start) + maxDist + JSON.stringify(path));
-  if (maxDist <= 0) {
+  if (maxDist - dist(head, start) <= 0) {
     return path;
   }
   if (!path)
-    path = [start];
+    path = [head];
   var min = 9999;
-  start.visited = true;
+  head.visited = true;
   for (var pt in points) {
     if (points[pt].visited)
       continue;
-    var dis = dist(points[pt], start);
+    var dis = dist(points[pt], head);
     if (dis === 0)
       continue;
     if (dis < min) {
@@ -72,10 +80,21 @@ function findPath(start, maxDist, path) {
       minPt = points[pt];
     }
   }
+  totalDistance += min;
+  console.log("distance: " + totalDistance);
 
   if (min === 9999) {
     return path; // we've run out of points?
-}
+  }
   path.push(minPt);
   return findPath(minPt , maxDist - min, path);
 }
+
+var points = [
+  {lat: 41.85, lng: -87.65},
+  {lat: 41.95, lng: -87.55},
+  {lat: 42.05, lng: -87.35},
+  {lat: 41.99, lng: -87.45},
+  {lat: 42.00, lng: -87.55},
+  {lat: 41.90, lng: -87.50}
+];
